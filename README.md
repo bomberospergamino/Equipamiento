@@ -86,3 +86,15 @@ por la URL de la aplicación web de Apps Script.
 - Se reemplazó Guardia/Turno por Fecha, autocompletada con la fecha actual y editable.
 - El formulario tiene un único botón final: Descargar + Enviar.
 - Al enviar, guarda el PDF en Drive y descarga una copia local.
+
+
+## Actualización v3
+
+- Las actividades de hoy muestran una tilde a la derecha cuando ya tienen un registro cargado con fecha de hoy.
+- El formulario ahora muestra, por cada ubicación, una tabla con columnas separadas:
+  - Elemento
+  - Unidades
+  - Cantidad
+  - Condición
+- El PDF de Drive y el PDF descargable también separan Elemento y Unidades.
+- Para que el listado de responsables funcione hay que actualizar también el Apps Script y volver a implementar la Web App.

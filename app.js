@@ -8,6 +8,7 @@ const state = {
   agenda: {},
   activities: [],
   responsables: [],
+  completedToday: [],
   selectedResponsables: [],
   currentActivity: null,
   currentItems: []
@@ -73,6 +74,7 @@ async function loadData(){
     state.agenda = data.agenda || {};
     state.activities = data.activities || [];
     state.responsables = data.responsables || [];
+    state.completedToday = data.completedToday || [];
     renderResponsablesList();
     renderHome();
     renderAll();
@@ -106,8 +108,15 @@ function renderAll(){
 function activityButton(name, caption){
   const btn = document.createElement('button');
   btn.type = 'button';
-  btn.className = 'activity-btn';
-  btn.innerHTML = `${escapeHtml(name)}<span>${caption}</span>`;
+  const done = state.completedToday.includes(name);
+  btn.className = `activity-btn${done ? ' done' : ''}`;
+  btn.innerHTML = `
+    <span class="activity-text">
+      ${escapeHtml(name)}
+      <small>${caption}</small>
+    </span>
+    ${done ? '<span class="done-badge" title="Actividad registrada hoy">✓</span>' : ''}
+  `;
   btn.addEventListener('click', () => openActivity(name));
   return btn;
 }
@@ -155,7 +164,8 @@ function itemRow(row){
   const tr = document.createElement('tr');
   tr.dataset.index = row.index;
   tr.innerHTML = `
-    <td data-label="Elemento - Unidad"><strong>${escapeHtml(row.elemento)}</strong> <span class="unit">Unidad: ${escapeHtml(row.cantidadEsperada)}</span></td>
+    <td data-label="Elemento"><strong>${escapeHtml(row.elemento)}</strong></td>
+    <td data-label="Unidades"><span class="unit">${escapeHtml(row.cantidadEsperada)}</span></td>
     <td data-label="Cantidad">
       <select class="cantidad-select" data-index="${row.index}">
         <option selected>Correcto</option>
@@ -248,21 +258,22 @@ function generateLocalPdf(download=false){
 
   const rows = payload.responses.map(r => [
     r.ubicacion,
-    `${r.elemento} - Unidad: ${r.cantidadEsperada}`,
+    r.elemento,
+    r.cantidadEsperada,
     r.cantidadEstado,
     r.condicionEstado
   ]);
 
   doc.autoTable({
     startY: 64,
-    head: [['Ubicación','Elemento - Unidad','Cantidad','Condición']],
+    head: [['Ubicación','Elemento','Unidades','Cantidad','Condición']],
     body: rows,
     styles: { fontSize: 8 },
     headStyles: { fillColor: [6,52,82] },
     didParseCell: function(data){
       if(data.section === 'body'){
-        const cantidad = data.row.raw[2];
-        const condicion = data.row.raw[3];
+        const cantidad = data.row.raw[3];
+        const condicion = data.row.raw[4];
         if(cantidad !== 'Correcto' || condicion === 'Regular') data.cell.styles.fillColor = [255,242,168];
         if(condicion === 'Mal') data.cell.styles.fillColor = [255,214,214];
       }

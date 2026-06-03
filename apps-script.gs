@@ -50,7 +50,7 @@ function getConfig_() {
     .map(s => s.getName())
     .filter(name => name !== 'AGENDA' && name !== 'REGISTROS' && name !== 'NOVEDADES');
 
-  return { agenda, activities, responsables: getResponsables_() };
+  return { agenda, activities, responsables: getResponsables_(), completedToday: getCompletedToday_() };
 }
 
 
@@ -65,6 +65,62 @@ function getResponsables_() {
     .map(v => String(v).trim())
     .filter(Boolean)
     .filter((value, index, arr) => arr.indexOf(value) === index);
+}
+
+function getCompletedToday_() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sh = ss.getSheetByName('REGISTROS');
+  if (!sh || sh.getLastRow() < 2) return [];
+
+  const values = sh.getDataRange().getValues();
+  const headers = values[0].map(h => String(h).trim());
+  const activityIdx = headers.indexOf('Actividad');
+  const controlDateIdx = headers.indexOf('Fecha control');
+  const loadDateIdx = headers.indexOf('Fecha carga');
+
+  if (activityIdx < 0) return [];
+
+  const tz = Session.getScriptTimeZone();
+  const todayKey = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+  const completed = new Set();
+
+  values.slice(1).forEach(row => {
+    const activity = String(row[activityIdx] || '').trim();
+    if (!activity) return;
+
+    let key = '';
+    if (controlDateIdx >= 0 && row[controlDateIdx]) {
+      key = normalizeDateKey_(row[controlDateIdx]);
+    } else if (loadDateIdx >= 0 && row[loadDateIdx]) {
+      key = normalizeDateKey_(row[loadDateIdx]);
+    }
+
+    if (key === todayKey) completed.add(activity);
+  });
+
+  return Array.from(completed);
+}
+
+function normalizeDateKey_(value) {
+  const tz = Session.getScriptTimeZone();
+
+  if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value)) {
+    return Utilities.formatDate(value, tz, 'yyyy-MM-dd');
+  }
+
+  const text = String(value || '').trim();
+  if (!text) return '';
+
+  const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+
+  const ar = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (ar) return `${ar[3]}-${String(ar[2]).padStart(2,'0')}-${String(ar[1]).padStart(2,'0')}`;
+
+  const parsed = new Date(text);
+  if (!isNaN(parsed)) return Utilities.formatDate(parsed, tz, 'yyyy-MM-dd');
+
+  return text;
 }
 
 function getActivityItems_(sheetName) {
@@ -115,7 +171,7 @@ function buildPdf_(payload, now) {
     const isBad = r.condicionEstado === 'Mal';
     const isWarn = r.cantidadEstado !== 'Correcto' || r.condicionEstado === 'Regular';
     const cls = isBad ? 'bad' : (isWarn ? 'warn' : '');
-    return `<tr class="${cls}"><td>${esc(r.ubicacion)}</td><td>${esc(r.elemento)}<br><small>Unidad: ${esc(r.cantidadEsperada)}</small></td><td>${esc(r.cantidadEstado)}</td><td>${esc(r.condicionEstado)}</td></tr>`;
+    return `<tr class="${cls}"><td>${esc(r.ubicacion)}</td><td>${esc(r.elemento)}</td><td>${esc(r.cantidadEsperada)}</td><td>${esc(r.cantidadEstado)}</td><td>${esc(r.condicionEstado)}</td></tr>`;
   }).join('');
 
   const html = `
@@ -129,7 +185,7 @@ function buildPdf_(payload, now) {
       <div><b>Responsable/s:</b> ${esc(payload.responsable || '-')}</div>
       <div><b>Generado:</b> ${Utilities.formatDate(now, Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')}</div>
     </div>
-    <table><thead><tr><th>Ubicación</th><th>Elemento - Unidad</th><th>Cantidad</th><th>Condición</th></tr></thead><tbody>${rowsHtml}</tbody></table>
+    <table><thead><tr><th>Ubicación</th><th>Elemento</th><th>Unidades</th><th>Cantidad</th><th>Condición</th></tr></thead><tbody>${rowsHtml}</tbody></table>
     <h2>Observaciones generales</h2><div class="obs">${esc(payload.observaciones || '-')}</div>
     <div class="nov"><b>Novedades detectadas:</b> ${novedades.length}</div>
   </body></html>`;
