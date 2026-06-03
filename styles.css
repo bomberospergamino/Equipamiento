@@ -156,3 +156,65 @@ label{font-weight:800;color:var(--navy);display:block} input,textarea,select{wid
   .unit-cell{width:82px!important;min-width:82px!important}
   .select-cell{min-width:120px!important}
 }
+
+
+/* Ajustes compactos v7 */
+.table-wrap table{
+  min-width:520px!important;
+}
+
+.element-col{
+  width:180px!important;
+}
+
+.element-cell{
+  width:180px!important;
+  min-width:180px!important;
+  padding:8px!important;
+}
+
+.element-cell strong{
+  font-size:.88rem!important;
+  line-height:1.15!important;
+}
+
+.unit-cell{
+  width:58px!important;
+  min-width:58px!important;
+  font-size:.86rem!important;
+  padding:6px!important;
+}
+
+.select-cell{
+  min-width:120px!important;
+}
+
+@media(max-width:720px){
+  .table-wrap table{
+    min-width:520px!important;
+  }
+
+  .element-col{
+    width:165px!important;
+  }
+
+  .element-cell{
+    width:165px!important;
+    min-width:165px!important;
+    padding:7px!important;
+  }
+
+  .element-cell strong{
+    font-size:.82rem!important;
+  }
+
+  .unit-cell{
+    width:52px!important;
+    min-width:52px!important;
+    font-size:.8rem!important;
+  }
+
+  .select-cell{
+    min-width:105px!important;
+  }
+}
