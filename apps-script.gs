@@ -10,6 +10,7 @@ function doGet(e) {
   try {
     const action = e.parameter.action;
     if (action === 'config') return jsonResponse(getConfig_());
+    if (action === 'responsables') return jsonResponse({ responsables: getResponsables_() });
     if (action === 'activity') return jsonResponse({ items: getActivityItems_(e.parameter.name) });
     return jsonResponse({ ok: true, message: 'Control de equipamiento activo' });
   } catch (err) {
@@ -50,21 +51,33 @@ function getConfig_() {
     .map(s => s.getName())
     .filter(name => name !== 'AGENDA' && name !== 'REGISTROS' && name !== 'NOVEDADES');
 
-  return { agenda, activities, responsables: getResponsables_(), completedToday: getCompletedToday_() };
+  let responsables = [];
+  let responsablesError = '';
+  try {
+    responsables = getResponsables_();
+  } catch (err) {
+    responsablesError = err.message;
+  }
+
+  return { agenda, activities, responsables, responsablesError, completedToday: getCompletedToday_() };
 }
 
 
 function getResponsables_() {
   const ss = SpreadsheetApp.openById(RESPONSABLES_SPREADSHEET_ID);
   const sheet = ss.getSheets()[0];
+  if (!sheet) throw new Error('No se encontró la primera hoja del archivo de responsables');
+
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
+
   return sheet.getRange(2, 4, lastRow - 1, 1)
     .getDisplayValues()
     .flat()
     .map(v => String(v).trim())
     .filter(Boolean)
-    .filter((value, index, arr) => arr.indexOf(value) === index);
+    .filter((value, index, arr) => arr.indexOf(value) === index)
+    .sort((a, b) => a.localeCompare(b));
 }
 
 function getCompletedToday_() {

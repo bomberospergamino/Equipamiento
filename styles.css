@@ -45,3 +45,75 @@ label{font-weight:800;color:var(--navy);display:block} input,textarea,select{wid
 .field-help{font-size:.78rem;color:var(--muted);margin-top:7px}
 
 @media(max-width:720px){.meta-card{grid-template-columns:1fr}.topbar{padding:12px}.logo{width:58px;height:58px}h1{font-size:1.1rem}.app-shell{padding:10px}.card{border-radius:16px;padding:13px}.button-grid{grid-template-columns:1fr}.activity-btn{min-height:58px;font-size:1.08rem}table{min-width:560px;border-collapse:collapse}thead{display:table-header-group}tr{display:table-row;border:0;border-radius:0;margin-bottom:0;padding:0;background:transparent}td{display:table-cell;border:1px solid var(--line);padding:8px;vertical-align:middle}td::before{content:none}th{font-size:.78rem;padding:8px}td{font-size:.9rem}select{min-height:42px;padding:8px;font-size:.9rem}.unit{white-space:normal}.actions{grid-template-columns:1fr}.sticky-head{top:0}}
+
+
+/* Vista tipo planilla para celular: una tabla por ubicación, una fila por elemento y scroll lateral */
+.location-card{padding:14px}
+.location-card h3{
+  font-size:1.15rem;
+  padding:8px 2px 12px;
+  color:var(--navy);
+}
+.table-wrap{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:white;
+}
+.table-wrap table{
+  min-width:720px;
+  border-collapse:collapse;
+}
+.table-wrap th{
+  background:#e8edf5;
+  color:#1d2b3a;
+  text-align:center;
+  font-size:.88rem;
+  line-height:1.15;
+  border:1px solid #c4ccd6;
+}
+.table-wrap td{
+  border:1px solid #c4ccd6;
+}
+.element-col{width:260px}
+.element-cell{
+  background:#e8edf5;
+  color:#1d2b3a;
+  width:260px;
+  min-width:260px;
+}
+.element-cell strong{
+  display:block;
+  font-size:.95rem;
+  line-height:1.25;
+}
+.element-cell .unit{
+  display:block;
+  color:#1d2b3a;
+  margin-top:2px;
+  font-weight:800;
+  white-space:normal;
+}
+.check-cell{
+  text-align:center;
+  min-width:96px;
+}
+.check-cell input[type="radio"]{
+  width:22px;
+  height:22px;
+  margin:0;
+  accent-color:var(--navy);
+}
+.row-warning .element-cell,
+.row-warning td{background:var(--warn)}
+.row-bad .element-cell,
+.row-bad td{background:var(--bad)}
+
+@media(max-width:720px){
+  .table-wrap table{min-width:720px!important}
+  .table-wrap th{font-size:.82rem!important;padding:8px 6px!important}
+  .table-wrap td{font-size:.88rem!important;padding:8px!important}
+  .element-cell{width:230px!important;min-width:230px!important}
+  .check-cell{min-width:92px!important}
+}

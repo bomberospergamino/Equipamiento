@@ -108,3 +108,19 @@ por la URL de la aplicación web de Apps Script.
 - Cada ubicación mantiene sus columnas: Elemento, Unidades, Cantidad y Condición.
 - La lista de responsables se toma desde:
   1nTBEnVuyXHPMJsMrnfdfcbKUFIFLKED3Z4oalQYRH14
+
+
+## Actualización v5
+
+- La vista del checklist queda como una planilla horizontal, con scroll lateral en celular.
+- Cada ubicación tiene su título y una tabla.
+- Cada elemento ocupa una sola fila.
+- La primera columna muestra Elemento y Unid.
+- Las opciones son tipo selección:
+  - Cantidad OK
+  - Hay más
+  - Hay menos
+  - Estado Bueno
+  - Estado Regular
+  - Estado Mal
+- Se agregó diagnóstico para responsables y acción `?action=responsables` en Apps Script.

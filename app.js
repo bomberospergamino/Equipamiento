@@ -76,6 +76,9 @@ async function loadData(){
     state.responsables = data.responsables || [];
     state.completedToday = data.completedToday || [];
     renderResponsablesList();
+    if(!state.responsables.length){
+      console.warn('No se recibieron responsables desde Apps Script. Revisar permisos del Google Sheets de personal y volver a implementar la Web App.');
+    }
     renderHome();
     renderAll();
     setStatus('Agenda actualizada correctamente.');
@@ -164,29 +167,35 @@ function itemRow(row){
   const tr = document.createElement('tr');
   tr.dataset.index = row.index;
   tr.innerHTML = `
-    <td data-label="Elemento"><strong>${escapeHtml(row.elemento)}</strong></td>
-    <td data-label="Unidades"><span class="unit">${escapeHtml(row.cantidadEsperada)}</span></td>
-    <td data-label="Cantidad">
-      <select class="cantidad-select" data-index="${row.index}">
-        <option selected>Correcto</option>
-        <option>Hay más</option>
-        <option>Hay menos</option>
-      </select>
+    <td data-label="Elemento" class="element-cell">
+      <strong>${escapeHtml(row.elemento)}</strong>
+      <span class="unit">Unid: ${escapeHtml(row.cantidadEsperada)}</span>
     </td>
-    <td data-label="Condición">
-      <select class="condicion-select" data-index="${row.index}">
-        <option selected>Bueno</option>
-        <option>Regular</option>
-        <option>Mal</option>
-      </select>
+    <td data-label="Cantidad OK" class="check-cell">
+      <input type="radio" name="cantidad_${row.index}" class="cantidad-radio" value="Correcto" checked />
+    </td>
+    <td data-label="Hay más" class="check-cell">
+      <input type="radio" name="cantidad_${row.index}" class="cantidad-radio" value="Hay más" />
+    </td>
+    <td data-label="Hay menos" class="check-cell">
+      <input type="radio" name="cantidad_${row.index}" class="cantidad-radio" value="Hay menos" />
+    </td>
+    <td data-label="Estado Bueno" class="check-cell">
+      <input type="radio" name="condicion_${row.index}" class="condicion-radio" value="Bueno" checked />
+    </td>
+    <td data-label="Estado Regular" class="check-cell">
+      <input type="radio" name="condicion_${row.index}" class="condicion-radio" value="Regular" />
+    </td>
+    <td data-label="Estado Mal" class="check-cell">
+      <input type="radio" name="condicion_${row.index}" class="condicion-radio" value="Mal" />
     </td>`;
-  tr.querySelectorAll('select').forEach(sel => sel.addEventListener('change', () => updateRowState(tr)));
+  tr.querySelectorAll('input[type="radio"]').forEach(input => input.addEventListener('change', () => updateRowState(tr)));
   return tr;
 }
 
 function updateRowState(tr){
-  const cantidad = tr.querySelector('.cantidad-select').value;
-  const condicion = tr.querySelector('.condicion-select').value;
+  const cantidad = tr.querySelector('.cantidad-radio:checked').value;
+  const condicion = tr.querySelector('.condicion-radio:checked').value;
   tr.classList.toggle('row-warning', cantidad !== 'Correcto' || condicion === 'Regular');
   tr.classList.toggle('row-bad', condicion === 'Mal');
 }
@@ -200,8 +209,8 @@ function collectPayload(){
       ubicacion: item.ubicacion,
       elemento: item.elemento,
       cantidadEsperada: item.cantidadEsperada,
-      cantidadEstado: row.querySelector('.cantidad-select').value,
-      condicionEstado: row.querySelector('.condicion-select').value
+      cantidadEstado: row.querySelector('.cantidad-radio:checked').value,
+      condicionEstado: row.querySelector('.condicion-radio:checked').value
     };
   });
 
