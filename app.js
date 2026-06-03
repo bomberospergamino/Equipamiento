@@ -2,7 +2,7 @@
    1) Publicá el Apps Script como Web App.
    2) Pegá la URL del despliegue en WEB_APP_URL.
 */
-const WEB_APP_URL = 'PEGAR_URL_WEB_APP_DE_APPS_SCRIPT';
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzxa3OxZHc1gvSqhhZ83d1szJWCHvJl9uIyvxo3HJzU_rxO7LvpuFUw65fSFlV8kAOb/exec";
 
 const state = {
   agenda: {},
