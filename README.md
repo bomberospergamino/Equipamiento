@@ -98,3 +98,13 @@ por la URL de la aplicación web de Apps Script.
   - Condición
 - El PDF de Drive y el PDF descargable también separan Elemento y Unidades.
 - Para que el listado de responsables funcione hay que actualizar también el Apps Script y volver a implementar la Web App.
+
+
+## Actualización v4
+
+- Se actualizó la URL del Apps Script:
+  https://script.google.com/macros/s/AKfycbzYiO560Az_Eo_hPzAxeczftZG4h9M3SEPjm-ACtrKzfdtHj_CRiqCCenM3KkIy6vyx/exec
+- La vista móvil conserva la tabla como tabla, con una fila por elemento.
+- Cada ubicación mantiene sus columnas: Elemento, Unidades, Cantidad y Condición.
+- La lista de responsables se toma desde:
+  1nTBEnVuyXHPMJsMrnfdfcbKUFIFLKED3Z4oalQYRH14
