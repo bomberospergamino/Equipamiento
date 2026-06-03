@@ -7,6 +7,8 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzxa3OxZHc1gvSqhhZ8
 const state = {
   agenda: {},
   activities: [],
+  responsables: [],
+  selectedResponsables: [],
   currentActivity: null,
   currentItems: []
 };
@@ -22,8 +24,10 @@ const els = {
   activityTitle: document.getElementById('activityTitle'),
   itemsContainer: document.getElementById('itemsContainer'),
   form: document.getElementById('controlForm'),
-  responsable: document.getElementById('responsable'),
-  turno: document.getElementById('turno'),
+  fechaControl: document.getElementById('fechaControl'),
+  responsableSearch: document.getElementById('responsableSearch'),
+  selectedResponsables: document.getElementById('selectedResponsables'),
+  responsablesList: document.getElementById('responsablesList'),
   observaciones: document.getElementById('observaciones')
 };
 
@@ -45,6 +49,7 @@ async function fetchJson(params){
 
 async function init(){
   els.todayLabel.textContent = `Agenda diaria · ${todayName}`;
+  els.fechaControl.value = todayInputValue();
   bindEvents();
   await loadData();
 }
@@ -53,7 +58,11 @@ function bindEvents(){
   document.getElementById('refreshBtn').addEventListener('click', loadData);
   document.getElementById('allActivitiesBtn').addEventListener('click', showAll);
   document.querySelectorAll('.backHome').forEach(btn => btn.addEventListener('click', showHome));
-  document.getElementById('downloadPdfBtn').addEventListener('click', () => generateLocalPdf(true));
+  els.responsableSearch.addEventListener('input', renderResponsablesList);
+  els.responsableSearch.addEventListener('focus', renderResponsablesList);
+  document.addEventListener('click', (e) => {
+    if(!e.target.closest('.responsables-field')) els.responsablesList.classList.remove('open');
+  });
   els.form.addEventListener('submit', submitForm);
 }
 
@@ -63,6 +72,8 @@ async function loadData(){
     const data = await fetchJson({ action:'config' });
     state.agenda = data.agenda || {};
     state.activities = data.activities || [];
+    state.responsables = data.responsables || [];
+    renderResponsablesList();
     renderHome();
     renderAll();
     setStatus('Agenda actualizada correctamente.');
@@ -118,6 +129,11 @@ async function openActivity(name){
 
 function renderFormItems(items){
   els.form.reset();
+  els.fechaControl.value = todayInputValue();
+  state.selectedResponsables = [];
+  els.responsableSearch.value = '';
+  renderSelectedResponsables();
+  renderResponsablesList();
   els.itemsContainer.innerHTML = '';
   const grouped = new Map();
   items.forEach((item, index) => {
@@ -178,11 +194,15 @@ function collectPayload(){
       condicionEstado: row.querySelector('.condicion-select').value
     };
   });
+
+  const responsables = [...state.selectedResponsables];
+
   return {
     activity: state.currentActivity,
     institution: 'Sociedad Bomberos Voluntarios Pergamino',
-    responsable: els.responsable.value.trim(),
-    turno: els.turno.value.trim(),
+    fechaControl: els.fechaControl.value,
+    responsable: responsables.join(', '),
+    responsables,
     observaciones: els.observaciones.value.trim(),
     createdAt: new Date().toISOString(),
     responses
@@ -191,10 +211,11 @@ function collectPayload(){
 
 async function submitForm(e){
   e.preventDefault();
-  if(!els.responsable.value.trim()) return alert('Completá el responsable del control.');
+  if(!els.fechaControl.value) return alert('Completá la fecha del control.');
+  if(!state.selectedResponsables.length) return alert('Seleccioná al menos un responsable.');
   const payload = collectPayload();
   const btn = document.getElementById('submitBtn');
-  btn.disabled = true; btn.textContent = 'Guardando...';
+  btn.disabled = true; btn.textContent = 'Enviando y generando PDF...';
   try{
     const res = await fetch(WEB_APP_URL, {
       method:'POST',
@@ -203,12 +224,13 @@ async function submitForm(e){
     });
     const json = await res.json();
     if(!json.ok) throw new Error(json.error || 'No se pudo guardar el reporte');
-    alert(`Reporte guardado en Drive.\n${json.pdfUrl || ''}`);
+    generateLocalPdf(true);
+    alert(`Reporte guardado en Drive y PDF descargado.\n${json.pdfUrl || ''}`);
   }catch(err){
     console.error(err);
     alert(err.message);
   }finally{
-    btn.disabled = false; btn.textContent = 'Guardar en Drive';
+    btn.disabled = false; btn.textContent = 'Descargar + Enviar';
   }
 }
 
@@ -220,9 +242,9 @@ function generateLocalPdf(download=false){
   doc.setFontSize(18); doc.text('Control de equipamiento', 14, 25);
   doc.setFontSize(11);
   doc.text(`Actividad: ${payload.activity}`, 14, 35);
-  doc.text(`Responsable: ${payload.responsable || '-'}`, 14, 42);
-  doc.text(`Turno/Guardia: ${payload.turno || '-'}`, 14, 49);
-  doc.text(`Fecha: ${new Date(payload.createdAt).toLocaleString('es-AR')}`, 14, 56);
+  doc.text(`Fecha: ${formatDateForDisplay(payload.fechaControl)}`, 14, 42);
+  doc.text(`Responsable/s: ${payload.responsable || '-'}`, 14, 49);
+  doc.text(`Generado: ${new Date(payload.createdAt).toLocaleString('es-AR')}`, 14, 56);
 
   const rows = payload.responses.map(r => [
     r.ubicacion,
@@ -252,6 +274,75 @@ function generateLocalPdf(download=false){
   const filename = `Control_${payload.activity}_${new Date().toISOString().slice(0,10)}.pdf`.replaceAll(' ','_');
   if(download) doc.save(filename);
   return doc;
+}
+
+
+function renderResponsablesList(){
+  const q = normalizeText(els.responsableSearch.value);
+  const selected = new Set(state.selectedResponsables);
+  const filtered = state.responsables
+    .filter(name => !selected.has(name))
+    .filter(name => !q || normalizeText(name).includes(q))
+    .slice(0, 80);
+
+  els.responsablesList.innerHTML = '';
+  if(!filtered.length){
+    els.responsablesList.innerHTML = '<div class="responsable-empty">Sin coincidencias</div>';
+  }else{
+    filtered.forEach(name => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'responsable-option';
+      btn.textContent = name;
+      btn.addEventListener('click', () => addResponsable(name));
+      els.responsablesList.appendChild(btn);
+    });
+  }
+
+  if(document.activeElement === els.responsableSearch || q) els.responsablesList.classList.add('open');
+}
+
+function addResponsable(name){
+  if(!state.selectedResponsables.includes(name)) state.selectedResponsables.push(name);
+  els.responsableSearch.value = '';
+  renderSelectedResponsables();
+  renderResponsablesList();
+  els.responsableSearch.focus();
+}
+
+function removeResponsable(name){
+  state.selectedResponsables = state.selectedResponsables.filter(x => x !== name);
+  renderSelectedResponsables();
+  renderResponsablesList();
+}
+
+function renderSelectedResponsables(){
+  els.selectedResponsables.innerHTML = '';
+  state.selectedResponsables.forEach(name => {
+    const tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.innerHTML = `${escapeHtml(name)} <button type="button" aria-label="Quitar ${escapeHtml(name)}">×</button>`;
+    tag.querySelector('button').addEventListener('click', () => removeResponsable(name));
+    els.selectedResponsables.appendChild(tag);
+  });
+}
+
+function todayInputValue(){
+  const d = new Date();
+  const offset = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - offset * 60000);
+  return local.toISOString().slice(0,10);
+}
+
+function formatDateForDisplay(value){
+  if(!value) return '-';
+  const [y,m,d] = value.split('-');
+  if(!y || !m || !d) return value;
+  return `${d}/${m}/${y}`;
+}
+
+function normalizeText(value){
+  return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 function showHome(){ els.homeView.classList.remove('hidden'); els.allView.classList.add('hidden'); els.formView.classList.add('hidden'); }

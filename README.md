@@ -77,3 +77,12 @@ por la URL de la aplicación web de Apps Script.
 - Carpeta Drive ID: `12CkVpy0YE0Jais2ffn1ewbKAvLR0USsQ`
 - Mail novedades: `adm.equipamiento.sbvp@gmail.com`
 - Institución: `Sociedad Bomberos Voluntarios Pergamino`
+
+
+## Actualización incluida
+
+- Responsable/s se carga desde la columna D de la primera hoja del Google Sheets de personal.
+- El campo Responsable permite buscar con lupa y seleccionar varias personas.
+- Se reemplazó Guardia/Turno por Fecha, autocompletada con la fecha actual y editable.
+- El formulario tiene un único botón final: Descargar + Enviar.
+- Al enviar, guarda el PDF en Drive y descarga una copia local.

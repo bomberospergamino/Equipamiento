@@ -3,6 +3,7 @@ const SPREADSHEET_ID = '1iej80w--kZK_N33UTq9FbDbA0air3qFimrDIB1QAxZ0';
 const ROOT_FOLDER_ID = '12CkVpy0YE0Jais2ffn1ewbKAvLR0USsQ';
 const NOVEDADES_EMAIL = 'adm.equipamiento.sbvp@gmail.com';
 const INSTITUTION = 'Sociedad Bomberos Voluntarios Pergamino';
+const RESPONSABLES_SPREADSHEET_ID = '1nTBEnVuyXHPMJsMrnfdfcbKUFIFLKED3Z4oalQYRH14';
 
 /*************** WEB APP ***************/
 function doGet(e) {
@@ -49,7 +50,21 @@ function getConfig_() {
     .map(s => s.getName())
     .filter(name => name !== 'AGENDA' && name !== 'REGISTROS' && name !== 'NOVEDADES');
 
-  return { agenda, activities };
+  return { agenda, activities, responsables: getResponsables_() };
+}
+
+
+function getResponsables_() {
+  const ss = SpreadsheetApp.openById(RESPONSABLES_SPREADSHEET_ID);
+  const sheet = ss.getSheets()[0];
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+  return sheet.getRange(2, 4, lastRow - 1, 1)
+    .getDisplayValues()
+    .flat()
+    .map(v => String(v).trim())
+    .filter(Boolean)
+    .filter((value, index, arr) => arr.indexOf(value) === index);
 }
 
 function getActivityItems_(sheetName) {
@@ -110,9 +125,9 @@ function buildPdf_(payload, now) {
     <div class="top"><h1>Control de equipamiento</h1><strong>${INSTITUTION}</strong></div>
     <div class="meta">
       <div><b>Actividad:</b> ${esc(payload.activity)}</div>
-      <div><b>Responsable:</b> ${esc(payload.responsable || '-')}</div>
-      <div><b>Guardia / turno:</b> ${esc(payload.turno || '-')}</div>
-      <div><b>Fecha:</b> ${Utilities.formatDate(now, Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')}</div>
+      <div><b>Fecha:</b> ${esc(formatControlDate_(payload.fechaControl))}</div>
+      <div><b>Responsable/s:</b> ${esc(payload.responsable || '-')}</div>
+      <div><b>Generado:</b> ${Utilities.formatDate(now, Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')}</div>
     </div>
     <table><thead><tr><th>Ubicación</th><th>Elemento - Unidad</th><th>Cantidad</th><th>Condición</th></tr></thead><tbody>${rowsHtml}</tbody></table>
     <h2>Observaciones generales</h2><div class="obs">${esc(payload.observaciones || '-')}</div>
@@ -123,16 +138,16 @@ function buildPdf_(payload, now) {
 }
 
 function appendRegistro_(payload, now, pdfUrl) {
-  const sh = getOrCreateSheet_('REGISTROS', ['Fecha','Actividad','Responsable','Turno','Observaciones','PDF','Total items','Total novedades']);
-  sh.appendRow([now, payload.activity, payload.responsable || '', payload.turno || '', payload.observaciones || '', pdfUrl, payload.responses.length, getNovedadesFromPayload_(payload).length]);
+  const sh = getOrCreateSheet_('REGISTROS', ['Fecha carga','Fecha control','Actividad','Responsable/s','Observaciones','PDF','Total items','Total novedades']);
+  sh.appendRow([now, payload.fechaControl || '', payload.activity, payload.responsable || '', payload.observaciones || '', pdfUrl, payload.responses.length, getNovedadesFromPayload_(payload).length]);
 }
 
 function appendNovedades_(payload, now, pdfUrl) {
   const novedades = getNovedadesFromPayload_(payload);
   if (!novedades.length && !payload.observaciones) return;
-  const sh = getOrCreateSheet_('NOVEDADES', ['Fecha','Enviado','Actividad','Responsable','Turno','Ubicación','Elemento','Unidad esperada','Cantidad','Condición','Observación general','PDF']);
-  novedades.forEach(n => sh.appendRow([now, '', payload.activity, payload.responsable || '', payload.turno || '', n.ubicacion, n.elemento, n.cantidadEsperada, n.cantidadEstado, n.condicionEstado, payload.observaciones || '', pdfUrl]));
-  if (!novedades.length && payload.observaciones) sh.appendRow([now, '', payload.activity, payload.responsable || '', payload.turno || '', '-', '-', '-', '-', '-', payload.observaciones, pdfUrl]);
+  const sh = getOrCreateSheet_('NOVEDADES', ['Fecha carga','Enviado','Fecha control','Actividad','Responsable/s','Ubicación','Elemento','Unidad esperada','Cantidad','Condición','Observación general','PDF']);
+  novedades.forEach(n => sh.appendRow([now, '', payload.fechaControl || '', payload.activity, payload.responsable || '', n.ubicacion, n.elemento, n.cantidadEsperada, n.cantidadEstado, n.condicionEstado, payload.observaciones || '', pdfUrl]));
+  if (!novedades.length && payload.observaciones) sh.appendRow([now, '', payload.fechaControl || '', payload.activity, payload.responsable || '', '-', '-', '-', '-', '-', payload.observaciones, pdfUrl]);
 }
 
 function getNovedadesFromPayload_(payload) {
@@ -173,6 +188,13 @@ function getOrCreateSheet_(name, headers) {
   if (!sh) sh = ss.insertSheet(name);
   if (sh.getLastRow() === 0) sh.appendRow(headers);
   return sh;
+}
+
+function formatControlDate_(value) {
+  if (!value) return '-';
+  const parts = String(value).split('-');
+  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  return String(value);
 }
 
 function normalizeHeader_(s) {

@@ -51,12 +51,20 @@
 
       <form id="controlForm" class="form-stack">
         <section class="card meta-card">
-          <label>Responsable que completa
-            <input id="responsable" name="responsable" type="text" placeholder="Nombre y apellido" required />
+          <label>Fecha
+            <input id="fechaControl" name="fechaControl" type="date" required />
           </label>
-          <label>Guardia / turno / dotación
-            <input id="turno" name="turno" type="text" placeholder="Opcional" />
-          </label>
+
+          <div class="responsables-field">
+            <label for="responsableSearch">Responsable/s que completa/n</label>
+            <div class="search-box">
+              <span aria-hidden="true">🔎</span>
+              <input id="responsableSearch" type="search" placeholder="Buscar y seleccionar responsable/s..." autocomplete="off" />
+            </div>
+            <div id="selectedResponsables" class="selected-tags"></div>
+            <div id="responsablesList" class="responsables-list"></div>
+            <p class="field-help">Podés seleccionar más de una persona.</p>
+          </div>
         </section>
 
         <div id="itemsContainer"></div>
@@ -68,8 +76,7 @@
         </section>
 
         <section class="actions">
-          <button id="downloadPdfBtn" class="secondary-btn" type="button">Descargar PDF</button>
-          <button id="submitBtn" class="primary-btn" type="submit">Guardar en Drive</button>
+          <button id="submitBtn" class="primary-btn full" type="submit">Descargar + Enviar</button>
         </section>
       </form>
     </section>
