@@ -117,3 +117,42 @@ label{font-weight:800;color:var(--navy);display:block} input,textarea,select{wid
   .element-cell{width:230px!important;min-width:230px!important}
   .check-cell{min-width:92px!important}
 }
+
+
+/* Actualización v6: tabla compacta con desplegables */
+.table-wrap table{
+  min-width:620px;
+}
+.element-col{width:260px}
+.unit-cell{
+  text-align:center;
+  width:90px;
+  min-width:90px;
+  background:#f8fafc;
+  font-weight:900;
+}
+.select-cell{
+  min-width:130px;
+}
+.select-cell select{
+  width:100%;
+  min-height:42px;
+  border:1px solid #b8c5d0;
+  border-radius:10px;
+  background:white;
+  font-weight:800;
+  color:#17212b;
+}
+.row-warning .unit-cell,
+.row-warning .select-cell,
+.row-warning .element-cell{background:var(--warn)}
+.row-bad .unit-cell,
+.row-bad .select-cell,
+.row-bad .element-cell{background:var(--bad)}
+
+@media(max-width:720px){
+  .table-wrap table{min-width:620px!important}
+  .element-cell{width:230px!important;min-width:230px!important}
+  .unit-cell{width:82px!important;min-width:82px!important}
+  .select-cell{min-width:120px!important}
+}

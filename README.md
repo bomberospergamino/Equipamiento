@@ -124,3 +124,21 @@ por la URL de la aplicación web de Apps Script.
   - Estado Regular
   - Estado Mal
 - Se agregó diagnóstico para responsables y acción `?action=responsables` en Apps Script.
+
+
+## Actualización v6
+
+- La tabla vuelve a 4 columnas:
+  - Elemento
+  - Unidades
+  - Cantidad
+  - Condición
+- Cantidad ahora es un desplegable con:
+  - Bien
+  - Hay menos
+  - Hay más
+- Condición ahora es un desplegable con:
+  - Bueno
+  - Regular
+  - Malo
+- Se mantiene una tabla por ubicación y scroll lateral en celular.

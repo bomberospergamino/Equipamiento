@@ -181,8 +181,8 @@ function saveSubmission_(payload) {
 function buildPdf_(payload, now) {
   const novedades = getNovedadesFromPayload_(payload);
   const rowsHtml = payload.responses.map(r => {
-    const isBad = r.condicionEstado === 'Mal';
-    const isWarn = r.cantidadEstado !== 'Correcto' || r.condicionEstado === 'Regular';
+    const isBad = r.condicionEstado === 'Malo';
+    const isWarn = r.cantidadEstado !== 'Bien' || r.condicionEstado === 'Regular';
     const cls = isBad ? 'bad' : (isWarn ? 'warn' : '');
     return `<tr class="${cls}"><td>${esc(r.ubicacion)}</td><td>${esc(r.elemento)}</td><td>${esc(r.cantidadEsperada)}</td><td>${esc(r.cantidadEstado)}</td><td>${esc(r.condicionEstado)}</td></tr>`;
   }).join('');
@@ -220,7 +220,7 @@ function appendNovedades_(payload, now, pdfUrl) {
 }
 
 function getNovedadesFromPayload_(payload) {
-  return (payload.responses || []).filter(r => r.cantidadEstado !== 'Correcto' || r.condicionEstado !== 'Bueno');
+  return (payload.responses || []).filter(r => r.cantidadEstado !== 'Bien' || r.condicionEstado !== 'Bueno');
 }
 
 /*************** MAIL DIARIO 23 HS ***************/

@@ -169,35 +169,33 @@ function itemRow(row){
   tr.innerHTML = `
     <td data-label="Elemento" class="element-cell">
       <strong>${escapeHtml(row.elemento)}</strong>
-      <span class="unit">Unid: ${escapeHtml(row.cantidadEsperada)}</span>
     </td>
-    <td data-label="Cantidad OK" class="check-cell">
-      <input type="radio" name="cantidad_${row.index}" class="cantidad-radio" value="Correcto" checked />
+    <td data-label="Unidades" class="unit-cell">
+      <span class="unit">${escapeHtml(row.cantidadEsperada)}</span>
     </td>
-    <td data-label="Hay más" class="check-cell">
-      <input type="radio" name="cantidad_${row.index}" class="cantidad-radio" value="Hay más" />
+    <td data-label="Cantidad" class="select-cell">
+      <select class="cantidad-select" data-index="${row.index}">
+        <option selected>Bien</option>
+        <option>Hay menos</option>
+        <option>Hay más</option>
+      </select>
     </td>
-    <td data-label="Hay menos" class="check-cell">
-      <input type="radio" name="cantidad_${row.index}" class="cantidad-radio" value="Hay menos" />
-    </td>
-    <td data-label="Estado Bueno" class="check-cell">
-      <input type="radio" name="condicion_${row.index}" class="condicion-radio" value="Bueno" checked />
-    </td>
-    <td data-label="Estado Regular" class="check-cell">
-      <input type="radio" name="condicion_${row.index}" class="condicion-radio" value="Regular" />
-    </td>
-    <td data-label="Estado Mal" class="check-cell">
-      <input type="radio" name="condicion_${row.index}" class="condicion-radio" value="Mal" />
+    <td data-label="Condición" class="select-cell">
+      <select class="condicion-select" data-index="${row.index}">
+        <option selected>Bueno</option>
+        <option>Regular</option>
+        <option>Malo</option>
+      </select>
     </td>`;
-  tr.querySelectorAll('input[type="radio"]').forEach(input => input.addEventListener('change', () => updateRowState(tr)));
+  tr.querySelectorAll('select').forEach(select => select.addEventListener('change', () => updateRowState(tr)));
   return tr;
 }
 
 function updateRowState(tr){
-  const cantidad = tr.querySelector('.cantidad-radio:checked').value;
-  const condicion = tr.querySelector('.condicion-radio:checked').value;
-  tr.classList.toggle('row-warning', cantidad !== 'Correcto' || condicion === 'Regular');
-  tr.classList.toggle('row-bad', condicion === 'Mal');
+  const cantidad = tr.querySelector('.cantidad-select').value;
+  const condicion = tr.querySelector('.condicion-select').value;
+  tr.classList.toggle('row-warning', cantidad !== 'Bien' || condicion === 'Regular');
+  tr.classList.toggle('row-bad', condicion === 'Malo');
 }
 
 function collectPayload(){
@@ -209,8 +207,8 @@ function collectPayload(){
       ubicacion: item.ubicacion,
       elemento: item.elemento,
       cantidadEsperada: item.cantidadEsperada,
-      cantidadEstado: row.querySelector('.cantidad-radio:checked').value,
-      condicionEstado: row.querySelector('.condicion-radio:checked').value
+      cantidadEstado: row.querySelector('.cantidad-select').value,
+      condicionEstado: row.querySelector('.condicion-select').value
     };
   });
 
@@ -283,8 +281,8 @@ function generateLocalPdf(download=false){
       if(data.section === 'body'){
         const cantidad = data.row.raw[3];
         const condicion = data.row.raw[4];
-        if(cantidad !== 'Correcto' || condicion === 'Regular') data.cell.styles.fillColor = [255,242,168];
-        if(condicion === 'Mal') data.cell.styles.fillColor = [255,214,214];
+        if(cantidad !== 'Bien' || condicion === 'Regular') data.cell.styles.fillColor = [255,242,168];
+        if(condicion === 'Malo') data.cell.styles.fillColor = [255,214,214];
       }
     }
   });
