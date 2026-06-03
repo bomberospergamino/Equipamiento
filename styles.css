@@ -218,3 +218,111 @@ label{font-weight:800;color:var(--navy);display:block} input,textarea,select{wid
     min-width:105px!important;
   }
 }
+
+
+/* Ajustes compactos v8 */
+.table-wrap table{
+  min-width:610px!important;
+}
+
+.element-col{
+  width:150px!important;
+}
+
+.element-cell{
+  width:150px!important;
+  min-width:150px!important;
+}
+
+.unit-cell{
+  width:46px!important;
+  min-width:46px!important;
+}
+
+.select-cell.compact{
+  min-width:92px!important;
+  width:92px!important;
+}
+
+.select-cell.compact select{
+  min-height:38px!important;
+  padding:6px 8px!important;
+  font-size:.82rem!important;
+}
+
+.obs-cell{
+  min-width:120px!important;
+  width:120px!important;
+  padding:6px!important;
+}
+
+.obs-input{
+  width:100%;
+  min-height:38px;
+  border:1px solid #b8c5d0;
+  border-radius:8px;
+  padding:6px 8px;
+  font-size:.82rem;
+}
+
+@media(max-width:720px){
+  .table-wrap table{
+    min-width:610px!important;
+  }
+
+  .element-cell{
+    width:140px!important;
+    min-width:140px!important;
+  }
+
+  .unit-cell{
+    width:42px!important;
+    min-width:42px!important;
+  }
+
+  .select-cell.compact{
+    min-width:84px!important;
+    width:84px!important;
+  }
+
+  .obs-cell{
+    min-width:110px!important;
+    width:110px!important;
+  }
+}
+
+
+/* Fotos del control v9 */
+.photos-preview{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(96px,1fr));
+  gap:10px;
+  margin-top:10px;
+}
+.photo-item{
+  position:relative;
+  border:1px solid var(--line);
+  border-radius:12px;
+  overflow:hidden;
+  background:white;
+  min-height:96px;
+}
+.photo-item img{
+  width:100%;
+  height:110px;
+  object-fit:cover;
+  display:block;
+}
+.photo-item button{
+  position:absolute;
+  top:5px;
+  right:5px;
+  width:28px;
+  height:28px;
+  border:0;
+  border-radius:999px;
+  background:rgba(6,52,82,.9);
+  color:white;
+  font-weight:900;
+  cursor:pointer;
+}

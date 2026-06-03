@@ -70,6 +70,14 @@
         <div id="itemsContainer"></div>
 
         <section class="card">
+          <label>Fotos del control
+            <input id="fotosControl" name="fotosControl" type="file" accept="image/*" capture="environment" multiple />
+          </label>
+          <p class="field-help">Podés sacar fotos o adjuntar imágenes. Se incluirán en el PDF.</p>
+          <div id="photosPreview" class="photos-preview"></div>
+        </section>
+
+        <section class="card">
           <label>Observaciones generales
             <textarea id="observaciones" name="observaciones" rows="5" placeholder="Registrar novedades, faltantes, roturas, reposiciones o aclaraciones..."></textarea>
           </label>
@@ -91,8 +99,9 @@
             <tr>
               <th class="element-col">Elemento</th>
               <th>Un</th>
-              <th>Cantidad</th>
-              <th>Condición</th>
+              <th>Cant.</th>
+              <th>Cond.</th>
+              <th>Obs.</th>
             </tr>
           </thead>
           <tbody></tbody>

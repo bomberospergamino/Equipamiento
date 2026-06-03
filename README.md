@@ -142,3 +142,12 @@ por la URL de la aplicación web de Apps Script.
   - Regular
   - Malo
 - Se mantiene una tabla por ubicación y scroll lateral en celular.
+
+
+## Actualización v9
+
+- Se agregó carga de fotos antes de Observaciones generales.
+- Permite sacar fotos desde celular o adjuntar imágenes.
+- Las fotos se comprimen en el navegador para que el envío no sea tan pesado.
+- Las fotos aparecen en el PDF descargado y en el PDF guardado en Drive.
+- Máximo configurado: 6 fotos por control.

@@ -184,12 +184,14 @@ function buildPdf_(payload, now) {
     const isBad = r.condicionEstado === 'Malo';
     const isWarn = r.cantidadEstado !== 'Bien' || r.condicionEstado === 'Regular';
     const cls = isBad ? 'bad' : (isWarn ? 'warn' : '');
-    return `<tr class="${cls}"><td>${esc(r.ubicacion)}</td><td>${esc(r.elemento)}</td><td>${esc(r.cantidadEsperada)}</td><td>${esc(r.cantidadEstado)}</td><td>${esc(r.condicionEstado)}</td></tr>`;
+    return `<tr class="${cls}"><td>${esc(r.ubicacion)}</td><td>${esc(r.elemento)}</td><td>${esc(r.cantidadEsperada)}</td><td>${esc(r.cantidadEstado)}</td><td>${esc(r.condicionEstado)}</td><td>${esc(r.observacionFila || '-')}</td></tr>`;
   }).join('');
+
+  const photosHtml = buildPhotosHtml_(payload.photos || []);
 
   const html = `
   <html><head><style>
-    body{font-family:Arial,sans-serif;color:#17212b} h1{color:#063452;margin:0} h2{color:#063452;margin-bottom:4px}.top{border-bottom:4px solid #df3438;padding-bottom:10px;margin-bottom:12px}.meta{font-size:12px;margin-bottom:14px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #b8c5d0;padding:6px;vertical-align:top}th{background:#063452;color:white}.warn{background:#fff2a8}.bad{background:#ffd6d6}.obs{border:1px solid #b8c5d0;padding:8px;margin-top:12px;min-height:45px}.nov{margin-top:12px;background:#fff7d4;padding:8px;border:1px solid #e4cf62}
+    body{font-family:Arial,sans-serif;color:#17212b} h1{color:#063452;margin:0} h2{color:#063452;margin-bottom:4px}.top{border-bottom:4px solid #df3438;padding-bottom:10px;margin-bottom:12px}.meta{font-size:12px;margin-bottom:14px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #b8c5d0;padding:6px;vertical-align:top}th{background:#063452;color:white}.warn{background:#fff2a8}.bad{background:#ffd6d6}.obs{border:1px solid #b8c5d0;padding:8px;margin-top:12px;min-height:45px}.nov{margin-top:12px;background:#fff7d4;padding:8px;border:1px solid #e4cf62}.photos{margin-top:14px}.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.photo{border:1px solid #b8c5d0;padding:6px;page-break-inside:avoid}.photo img{width:100%;max-height:240px;object-fit:contain}.caption{font-size:10px;color:#647587;margin-top:4px}
   </style></head><body>
     <div class="top"><h1>Control de equipamiento</h1><strong>${INSTITUTION}</strong></div>
     <div class="meta">
@@ -198,12 +200,23 @@ function buildPdf_(payload, now) {
       <div><b>Responsable/s:</b> ${esc(payload.responsable || '-')}</div>
       <div><b>Generado:</b> ${Utilities.formatDate(now, Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')}</div>
     </div>
-    <table><thead><tr><th>Ubicación</th><th>Elemento</th><th>Unidades</th><th>Cantidad</th><th>Condición</th></tr></thead><tbody>${rowsHtml}</tbody></table>
+    <table><thead><tr><th>Ubicación</th><th>Elemento</th><th>Un</th><th>Cantidad</th><th>Condición</th><th>Obs.</th></tr></thead><tbody>${rowsHtml}</tbody></table>
     <h2>Observaciones generales</h2><div class="obs">${esc(payload.observaciones || '-')}</div>
+    ${photosHtml}
     <div class="nov"><b>Novedades detectadas:</b> ${novedades.length}</div>
   </body></html>`;
 
   return HtmlService.createHtmlOutput(html).getBlob().getAs(MimeType.PDF);
+}
+
+function buildPhotosHtml_(photos) {
+  if (!photos || !photos.length) return '';
+  const items = photos.map((photo, index) => {
+    const src = String(photo.dataUrl || '');
+    if (!src) return '';
+    return `<div class="photo"><img src="${src}"><div class="caption">${esc(photo.name || ('Foto ' + (index + 1)))}</div></div>`;
+  }).join('');
+  return `<div class="photos"><h2>Fotos del control</h2><div class="photo-grid">${items}</div></div>`;
 }
 
 function appendRegistro_(payload, now, pdfUrl) {

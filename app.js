@@ -10,6 +10,7 @@ const state = {
   responsables: [],
   completedToday: [],
   selectedResponsables: [],
+  photos: [],
   currentActivity: null,
   currentItems: []
 };
@@ -29,6 +30,8 @@ const els = {
   responsableSearch: document.getElementById('responsableSearch'),
   selectedResponsables: document.getElementById('selectedResponsables'),
   responsablesList: document.getElementById('responsablesList'),
+  fotosControl: document.getElementById('fotosControl'),
+  photosPreview: document.getElementById('photosPreview'),
   observaciones: document.getElementById('observaciones')
 };
 
@@ -64,6 +67,7 @@ function bindEvents(){
   document.addEventListener('click', (e) => {
     if(!e.target.closest('.responsables-field')) els.responsablesList.classList.remove('open');
   });
+  els.fotosControl.addEventListener('change', handlePhotos);
   els.form.addEventListener('submit', submitForm);
 }
 
@@ -143,6 +147,9 @@ function renderFormItems(items){
   els.form.reset();
   els.fechaControl.value = todayInputValue();
   state.selectedResponsables = [];
+  state.photos = [];
+  els.fotosControl.value = '';
+  renderPhotosPreview();
   els.responsableSearch.value = '';
   renderSelectedResponsables();
   renderResponsablesList();
@@ -170,22 +177,25 @@ function itemRow(row){
     <td data-label="Elemento" class="element-cell">
       <strong>${escapeHtml(row.elemento)}</strong>
     </td>
-    <td data-label="Unidades" class="unit-cell">
+    <td data-label="Un" class="unit-cell">
       <span class="unit">${escapeHtml(row.cantidadEsperada)}</span>
     </td>
-    <td data-label="Cantidad" class="select-cell">
+    <td data-label="Cantidad" class="select-cell compact">
       <select class="cantidad-select" data-index="${row.index}">
         <option selected>Bien</option>
         <option>Hay menos</option>
         <option>Hay más</option>
       </select>
     </td>
-    <td data-label="Condición" class="select-cell">
+    <td data-label="Condición" class="select-cell compact">
       <select class="condicion-select" data-index="${row.index}">
         <option selected>Bueno</option>
         <option>Regular</option>
         <option>Malo</option>
       </select>
+    </td>
+    <td data-label="Observación" class="obs-cell">
+      <input type="text" class="obs-input" placeholder="Obs..." />
     </td>`;
   tr.querySelectorAll('select').forEach(select => select.addEventListener('change', () => updateRowState(tr)));
   return tr;
@@ -208,7 +218,8 @@ function collectPayload(){
       elemento: item.elemento,
       cantidadEsperada: item.cantidadEsperada,
       cantidadEstado: row.querySelector('.cantidad-select').value,
-      condicionEstado: row.querySelector('.condicion-select').value
+      condicionEstado: row.querySelector('.condicion-select').value,
+      observacionFila: row.querySelector('.obs-input').value.trim()
     };
   });
 
@@ -221,6 +232,7 @@ function collectPayload(){
     responsable: responsables.join(', '),
     responsables,
     observaciones: els.observaciones.value.trim(),
+    photos: state.photos,
     createdAt: new Date().toISOString(),
     responses
   };
@@ -268,12 +280,13 @@ function generateLocalPdf(download=false){
     r.elemento,
     r.cantidadEsperada,
     r.cantidadEstado,
-    r.condicionEstado
+    r.condicionEstado,
+    r.observacionFila || '-'
   ]);
 
   doc.autoTable({
     startY: 64,
-    head: [['Ubicación','Elemento','Unidades','Cantidad','Condición']],
+    head: [['Ubicación','Elemento','Un','Cantidad','Condición','Obs.']],
     body: rows,
     styles: { fontSize: 8 },
     headStyles: { fillColor: [6,52,82] },
@@ -286,14 +299,120 @@ function generateLocalPdf(download=false){
       }
     }
   });
-  const y = doc.lastAutoTable.finalY + 10;
+  let y = doc.lastAutoTable.finalY + 10;
   doc.setFontSize(12); doc.text('Observaciones generales:', 14, y);
-  doc.setFontSize(10); doc.text(doc.splitTextToSize(payload.observaciones || '-', 180), 14, y + 7);
+  doc.setFontSize(10);
+  const obsLines = doc.splitTextToSize(payload.observaciones || '-', 180);
+  doc.text(obsLines, 14, y + 7);
+  y = y + 12 + (obsLines.length * 5);
+
+  if(payload.photos && payload.photos.length){
+    if(y > 245){ doc.addPage(); y = 16; }
+    doc.setFontSize(12); doc.text('Fotos del control:', 14, y);
+    y += 7;
+
+    payload.photos.forEach((photo, index) => {
+      try{
+        if(y > 215){ doc.addPage(); y = 16; }
+        const maxW = 82;
+        const maxH = 62;
+        const dims = fitImage(photo.width || 800, photo.height || 600, maxW, maxH);
+        const x = (index % 2 === 0) ? 14 : 108;
+        if(index % 2 === 0 && index > 0) y += 72;
+        if(y > 215){ doc.addPage(); y = 16; }
+        doc.addImage(photo.dataUrl, 'JPEG', x, y, dims.w, dims.h);
+        doc.setFontSize(8);
+        doc.text(photo.name || `Foto ${index + 1}`, x, y + dims.h + 4, { maxWidth: maxW });
+        if(index % 2 === 1) y += 72;
+      }catch(err){
+        console.warn('No se pudo agregar foto al PDF local', err);
+      }
+    });
+  }
+
   const filename = `Control_${payload.activity}_${new Date().toISOString().slice(0,10)}.pdf`.replaceAll(' ','_');
   if(download) doc.save(filename);
   return doc;
 }
 
+
+
+async function handlePhotos(event){
+  const files = Array.from(event.target.files || []);
+  const remaining = Math.max(0, 6 - state.photos.length);
+  const selected = files.slice(0, remaining);
+
+  if(files.length > remaining){
+    alert('Se permiten hasta 6 fotos por control.');
+  }
+
+  for(const file of selected){
+    try{
+      const photo = await fileToCompressedPhoto(file);
+      state.photos.push(photo);
+    }catch(err){
+      console.error(err);
+      alert(`No se pudo cargar la foto: ${file.name}`);
+    }
+  }
+
+  els.fotosControl.value = '';
+  renderPhotosPreview();
+}
+
+function renderPhotosPreview(){
+  els.photosPreview.innerHTML = '';
+  if(!state.photos.length) return;
+
+  state.photos.forEach((photo, index) => {
+    const item = document.createElement('div');
+    item.className = 'photo-item';
+    item.innerHTML = `
+      <img src="${photo.dataUrl}" alt="${escapeHtml(photo.name || 'Foto del control')}" />
+      <button type="button" aria-label="Quitar foto">×</button>
+    `;
+    item.querySelector('button').addEventListener('click', () => {
+      state.photos.splice(index, 1);
+      renderPhotosPreview();
+    });
+    els.photosPreview.appendChild(item);
+  });
+}
+
+function fileToCompressedPhoto(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const maxSide = 1100;
+        const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+        resolve({
+          name: file.name,
+          type: 'image/jpeg',
+          width: canvas.width,
+          height: canvas.height,
+          dataUrl
+        });
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function fitImage(width, height, maxW, maxH){
+  const ratio = Math.min(maxW / width, maxH / height);
+  return { w: width * ratio, h: height * ratio };
+}
 
 function renderResponsablesList(){
   const q = normalizeText(els.responsableSearch.value);
