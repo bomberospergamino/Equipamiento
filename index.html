@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Control de equipamiento</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <img src="logo-sbvp.png" alt="Sociedad Bomberos Voluntarios Pergamino" class="logo" />
+    <div>
+      <p class="eyebrow">Sociedad Bomberos Voluntarios Pergamino</p>
+      <h1>Control de equipamiento</h1>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <section id="homeView" class="card">
+      <div class="section-title">
+        <div>
+          <p class="eyebrow" id="todayLabel">Agenda diaria</p>
+          <h2>Actividades de hoy</h2>
+        </div>
+        <button id="refreshBtn" class="ghost-btn" type="button">Actualizar</button>
+      </div>
+      <div id="statusBox" class="status">Cargando agenda...</div>
+      <div id="todayActivities" class="button-grid"></div>
+      <button id="allActivitiesBtn" class="secondary-btn full" type="button">Ver todas las actividades</button>
+    </section>
+
+    <section id="allView" class="card hidden">
+      <div class="section-title">
+        <div>
+          <p class="eyebrow">Listado completo</p>
+          <h2>Todas las actividades</h2>
+        </div>
+        <button class="ghost-btn backHome" type="button">Volver</button>
+      </div>
+      <div id="allActivities" class="button-grid"></div>
+    </section>
+
+    <section id="formView" class="hidden">
+      <div class="card sticky-head">
+        <button class="ghost-btn backHome" type="button">Volver</button>
+        <div>
+          <p class="eyebrow">Formulario de control</p>
+          <h2 id="activityTitle">Actividad</h2>
+        </div>
+      </div>
+
+      <form id="controlForm" class="form-stack">
+        <section class="card meta-card">
+          <label>Responsable que completa
+            <input id="responsable" name="responsable" type="text" placeholder="Nombre y apellido" required />
+          </label>
+          <label>Guardia / turno / dotación
+            <input id="turno" name="turno" type="text" placeholder="Opcional" />
+          </label>
+        </section>
+
+        <div id="itemsContainer"></div>
+
+        <section class="card">
+          <label>Observaciones generales
+            <textarea id="observaciones" name="observaciones" rows="5" placeholder="Registrar novedades, faltantes, roturas, reposiciones o aclaraciones..."></textarea>
+          </label>
+        </section>
+
+        <section class="actions">
+          <button id="downloadPdfBtn" class="secondary-btn" type="button">Descargar PDF</button>
+          <button id="submitBtn" class="primary-btn" type="submit">Guardar en Drive</button>
+        </section>
+      </form>
+    </section>
+  </main>
+
+  <template id="locationTemplate">
+    <section class="card location-card">
+      <h3></h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Elemento - Unidad</th>
+              <th>Cantidad</th>
+              <th>Condición</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </template>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
