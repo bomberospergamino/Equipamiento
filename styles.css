@@ -326,3 +326,105 @@ label{font-weight:800;color:var(--navy);display:block} input,textarea,select{wid
   font-weight:900;
   cursor:pointer;
 }
+
+/* Ajuste v10: tabla más compacta en pantalla de carga */
+.table-wrap{
+  overflow-x:auto;
+}
+
+.table-wrap table{
+  width:100%!important;
+  min-width:0!important;
+  table-layout:fixed!important;
+}
+
+.element-col{
+  width:108px!important;
+}
+
+.element-cell{
+  width:108px!important;
+  min-width:108px!important;
+  padding:6px!important;
+}
+
+.element-cell strong{
+  font-size:.76rem!important;
+  line-height:1.12!important;
+  overflow-wrap:anywhere;
+}
+
+.unit-cell{
+  width:34px!important;
+  min-width:34px!important;
+  padding:5px 3px!important;
+  font-size:.72rem!important;
+}
+
+.select-cell.compact{
+  width:70px!important;
+  min-width:70px!important;
+  padding:5px 3px!important;
+}
+
+.select-cell.compact select{
+  min-height:34px!important;
+  padding:4px 3px!important;
+  font-size:.70rem!important;
+  border-radius:7px!important;
+}
+
+.obs-cell{
+  width:78px!important;
+  min-width:78px!important;
+  padding:5px 3px!important;
+}
+
+.obs-input{
+  min-height:34px!important;
+  padding:4px 5px!important;
+  font-size:.70rem!important;
+}
+
+.table-wrap th{
+  padding:6px 3px!important;
+  font-size:.70rem!important;
+  line-height:1.05!important;
+}
+
+@media(max-width:720px){
+  .table-wrap table{
+    width:100%!important;
+    min-width:0!important;
+    table-layout:fixed!important;
+  }
+
+  .element-col,
+  .element-cell{
+    width:104px!important;
+    min-width:104px!important;
+  }
+
+  .element-cell strong{
+    font-size:.72rem!important;
+  }
+
+  .unit-cell{
+    width:32px!important;
+    min-width:32px!important;
+  }
+
+  .select-cell.compact{
+    width:66px!important;
+    min-width:66px!important;
+  }
+
+  .select-cell.compact select{
+    font-size:.68rem!important;
+  }
+
+  .obs-cell{
+    width:72px!important;
+    min-width:72px!important;
+  }
+}

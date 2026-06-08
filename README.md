@@ -151,3 +151,10 @@ por la URL de la aplicación web de Apps Script.
 - Las fotos se comprimen en el navegador para que el envío no sea tan pesado.
 - Las fotos aparecen en el PDF descargado y en el PDF guardado en Drive.
 - Máximo configurado: 6 fotos por control.
+
+## Actualización v10
+
+- Se compactó la tabla del formulario para celular.
+- Las columnas Elemento, Un, Cantidad y Condición ahora son más angostas.
+- La tabla usa ancho completo y columnas fijas para que entren mejor en pantalla.
+- Observación queda más compacta para reducir el scroll lateral.
