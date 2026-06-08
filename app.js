@@ -275,31 +275,56 @@ function generateLocalPdf(download=false){
   doc.text(`Responsable/s: ${payload.responsable || '-'}`, 14, 49);
   doc.text(`Generado: ${new Date(payload.createdAt).toLocaleString('es-AR')}`, 14, 56);
 
-  const rows = payload.responses.map(r => [
-    r.ubicacion,
-    r.elemento,
-    r.cantidadEsperada,
-    r.cantidadEstado,
-    r.condicionEstado,
-    r.observacionFila || '-'
-  ]);
+  let y = 66;
+  const grouped = groupResponsesByLocation(payload.responses);
 
-  doc.autoTable({
-    startY: 64,
-    head: [['Ubicación','Elemento','Un','Cantidad','Condición','Obs.']],
-    body: rows,
-    styles: { fontSize: 8 },
-    headStyles: { fillColor: [6,52,82] },
-    didParseCell: function(data){
-      if(data.section === 'body'){
-        const cantidad = data.row.raw[3];
-        const condicion = data.row.raw[4];
-        if(cantidad !== 'Bien' || condicion === 'Regular') data.cell.styles.fillColor = [255,242,168];
-        if(condicion === 'Malo') data.cell.styles.fillColor = [255,214,214];
-      }
+  grouped.forEach((group, groupIndex) => {
+    if(groupIndex > 0 && y > 225){
+      doc.addPage();
+      y = 16;
     }
+
+    doc.setFontSize(12);
+    doc.setTextColor(6, 52, 82);
+    doc.text(group.location, 14, y);
+    doc.setTextColor(23, 33, 43);
+
+    const rows = group.rows.map(r => [
+      r.elemento,
+      r.cantidadEsperada,
+      r.cantidadEstado,
+      r.condicionEstado,
+      r.observacionFila || '-'
+    ]);
+
+    doc.autoTable({
+      startY: y + 4,
+      head: [['Elemento','Un','Cantidad','Condición','Obs.']],
+      body: rows,
+      styles: { fontSize: 8, cellPadding: 2.2, overflow: 'linebreak' },
+      headStyles: { fillColor: [6,52,82] },
+      columnStyles: {
+        0: { cellWidth: 62 },
+        1: { cellWidth: 15, halign: 'center' },
+        2: { cellWidth: 28, halign: 'center' },
+        3: { cellWidth: 28, halign: 'center' },
+        4: { cellWidth: 47 }
+      },
+      margin: { left: 14, right: 14 },
+      didParseCell: function(data){
+        if(data.section === 'body'){
+          const cantidad = data.row.raw[2];
+          const condicion = data.row.raw[3];
+          if(cantidad !== 'Bien' || condicion === 'Regular') data.cell.styles.fillColor = [255,242,168];
+          if(condicion === 'Malo') data.cell.styles.fillColor = [255,214,214];
+        }
+      }
+    });
+
+    y = doc.lastAutoTable.finalY + 9;
   });
-  let y = doc.lastAutoTable.finalY + 10;
+
+  if(y > 245){ doc.addPage(); y = 16; }
   doc.setFontSize(12); doc.text('Observaciones generales:', 14, y);
   doc.setFontSize(10);
   const obsLines = doc.splitTextToSize(payload.observaciones || '-', 180);
@@ -335,6 +360,15 @@ function generateLocalPdf(download=false){
   return doc;
 }
 
+function groupResponsesByLocation(responses){
+  const grouped = new Map();
+  (responses || []).forEach(row => {
+    const location = row.ubicacion || 'Sin ubicación';
+    if(!grouped.has(location)) grouped.set(location, []);
+    grouped.get(location).push(row);
+  });
+  return Array.from(grouped, ([location, rows]) => ({ location, rows }));
+}
 
 
 async function handlePhotos(event){
