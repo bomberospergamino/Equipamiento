@@ -1,6 +1,6 @@
-/* Control de equipamiento - SBVP
-   1) Publicá el Apps Script como Web App.
-   2) Pegá la URL del despliegue en WEB_APP_URL.
+﻿/* Control de equipamiento - SBVP
+   1) PublicÃ¡ el Apps Script como Web App.
+   2) PegÃ¡ la URL del despliegue en WEB_APP_URL.
 */
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzYiO560Az_Eo_hPzAxeczftZG4h9M3SEPjm-ACtrKzfdtHj_CRiqCCenM3KkIy6vyx/exec";
 
@@ -35,8 +35,17 @@ const els = {
   observaciones: document.getElementById('observaciones')
 };
 
-const dayNames = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const dayNames = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'];
 const todayName = dayNames[new Date().getDay()];
+const dayLabels = {
+  Domingo: 'Domingo',
+  Lunes: 'Lunes',
+  Martes: 'Martes',
+  Miercoles: 'Miercoles',
+  Jueves: 'Jueves',
+  Viernes: 'Viernes',
+  Sabado: 'Sabado'
+};
 
 function apiUrl(params){
   const url = new URL(WEB_APP_URL);
@@ -52,7 +61,7 @@ async function fetchJson(params){
 }
 
 async function init(){
-  els.todayLabel.textContent = `Agenda diaria · ${todayName}`;
+  els.todayLabel.textContent = `Agenda diaria - ${dayLabels[todayName] || todayName}`;
   els.fechaControl.value = todayInputValue();
   bindEvents();
   await loadData();
@@ -98,7 +107,7 @@ function setStatus(msg, isError=false){
 }
 
 function renderHome(){
-  const list = state.agenda[todayName] || [];
+  const list = getTodayAgendaList();
   els.todayActivities.innerHTML = '';
   if(!list.length){
     els.todayActivities.innerHTML = '<p>No hay actividades programadas para hoy.</p>';
@@ -107,6 +116,11 @@ function renderHome(){
   list.forEach(name => els.todayActivities.appendChild(activityButton(name, 'Actividad de hoy')));
 }
 
+function getTodayAgendaList(){
+  const expected = normalizeText(todayName).trim();
+  const agendaKey = Object.keys(state.agenda || {}).find(key => normalizeText(key).trim() === expected);
+  return agendaKey ? state.agenda[agendaKey] || [] : [];
+}
 function renderAll(){
   els.allActivities.innerHTML = '';
   state.activities.forEach(name => els.allActivities.appendChild(activityButton(name, 'Ver formulario')));
@@ -122,7 +136,7 @@ function activityButton(name, caption){
       ${escapeHtml(name)}
       <small>${caption}</small>
     </span>
-    ${done ? '<span class="done-badge" title="Actividad registrada hoy">✓</span>' : ''}
+    ${done ? '<span class="done-badge" title="Actividad registrada hoy">âœ“</span>' : ''}
   `;
   btn.addEventListener('click', () => openActivity(name));
   return btn;
@@ -156,7 +170,7 @@ function renderFormItems(items){
   els.itemsContainer.innerHTML = '';
   const grouped = new Map();
   items.forEach((item, index) => {
-    const key = item.ubicacion || 'Sin ubicación';
+    const key = item.ubicacion || 'Sin ubicaciÃ³n';
     if(!grouped.has(key)) grouped.set(key, []);
     grouped.get(key).push({...item, index});
   });
@@ -184,17 +198,17 @@ function itemRow(row){
       <select class="cantidad-select" data-index="${row.index}">
         <option selected>Bien</option>
         <option>Hay menos</option>
-        <option>Hay más</option>
+        <option>Hay mÃ¡s</option>
       </select>
     </td>
-    <td data-label="Condición" class="select-cell compact">
+    <td data-label="CondiciÃ³n" class="select-cell compact">
       <select class="condicion-select" data-index="${row.index}">
         <option selected>Bueno</option>
         <option>Regular</option>
         <option>Malo</option>
       </select>
     </td>
-    <td data-label="Observación" class="obs-cell">
+    <td data-label="ObservaciÃ³n" class="obs-cell">
       <input type="text" class="obs-input" placeholder="Obs..." />
     </td>`;
   tr.querySelectorAll('select').forEach(select => select.addEventListener('change', () => updateRowState(tr)));
@@ -240,20 +254,23 @@ function collectPayload(){
 
 async function submitForm(e){
   e.preventDefault();
-  if(!els.fechaControl.value) return alert('Completá la fecha del control.');
-  if(!state.selectedResponsables.length) return alert('Seleccioná al menos un responsable.');
+  if(!els.fechaControl.value) return alert('CompletÃ¡ la fecha del control.');
+  if(!state.selectedResponsables.length) return alert('SeleccionÃ¡ al menos un responsable.');
   const payload = collectPayload();
   const btn = document.getElementById('submitBtn');
   btn.disabled = true; btn.textContent = 'Enviando y generando PDF...';
   try{
+    const pdf = generateLocalPdf(false);
+    const filename = pdfFileName(payload);
+    const pdfBase64 = pdf.output('datauristring').split(',')[1];
     const res = await fetch(WEB_APP_URL, {
       method:'POST',
-      body: JSON.stringify({ action:'submit', payload }),
+      body: JSON.stringify({ action:'submit', payload, pdfBase64, filename }),
       headers:{ 'Content-Type':'text/plain;charset=utf-8' }
     });
     const json = await res.json();
     if(!json.ok) throw new Error(json.error || 'No se pudo guardar el reporte');
-    generateLocalPdf(true);
+    pdf.save(filename);
     alert(`Reporte guardado en Drive y PDF descargado.\n${json.pdfUrl || ''}`);
   }catch(err){
     console.error(err);
@@ -267,27 +284,24 @@ function generateLocalPdf(download=false){
   const { jsPDF } = window.jspdf;
   const payload = collectPayload();
   const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-  doc.setFontSize(14); doc.text('Sociedad Bomberos Voluntarios Pergamino', 14, 16);
-  doc.setFontSize(18); doc.text('Control de equipamiento', 14, 25);
-  doc.setFontSize(11);
-  doc.text(`Actividad: ${payload.activity}`, 14, 35);
-  doc.text(`Fecha: ${formatDateForDisplay(payload.fechaControl)}`, 14, 42);
-  doc.text(`Responsable/s: ${payload.responsable || '-'}`, 14, 49);
-  doc.text(`Generado: ${new Date(payload.createdAt).toLocaleString('es-AR')}`, 14, 56);
+  drawPdfHeader(doc, payload);
 
-  let y = 66;
+  let y = 48;
   const grouped = groupResponsesByLocation(payload.responses);
 
   grouped.forEach((group, groupIndex) => {
-    if(groupIndex > 0 && y > 225){
+    if(groupIndex > 0 && y > 218){
       doc.addPage();
-      y = 16;
+      drawPdfHeader(doc, payload, true);
+      y = 48;
     }
 
-    doc.setFontSize(12);
-    doc.setTextColor(6, 52, 82);
-    doc.text(group.location, 14, y);
-    doc.setTextColor(23, 33, 43);
+    doc.setFillColor(7, 52, 79);
+    doc.roundedRect(14, y, 182, 8, 1.5, 1.5, 'F');
+    doc.setFontSize(10);
+    doc.setTextColor(255, 255, 255);
+    doc.text(`Ubicacion ${group.location}`, 17, y + 5.4);
+    doc.setTextColor(22, 35, 50);
 
     const rows = group.rows.map(r => [
       r.elemento,
@@ -298,11 +312,12 @@ function generateLocalPdf(download=false){
     ]);
 
     doc.autoTable({
-      startY: y + 4,
-      head: [['Elemento','Un','Cantidad','Condición','Obs.']],
+      startY: y + 10,
+      head: [['Elemento','Un','Cantidad','Condicion','Obs.']],
       body: rows,
       styles: { fontSize: 8, cellPadding: 2.2, overflow: 'linebreak' },
-      headStyles: { fillColor: [6,52,82] },
+      headStyles: { fillColor: [5,38,58], textColor: [255,255,255] },
+      alternateRowStyles: { fillColor: [242,246,248] },
       columnStyles: {
         0: { cellWidth: 62 },
         1: { cellWidth: 15, halign: 'center' },
@@ -315,8 +330,8 @@ function generateLocalPdf(download=false){
         if(data.section === 'body'){
           const cantidad = data.row.raw[2];
           const condicion = data.row.raw[3];
-          if(cantidad !== 'Bien' || condicion === 'Regular') data.cell.styles.fillColor = [255,242,168];
-          if(condicion === 'Malo') data.cell.styles.fillColor = [255,214,214];
+          if(cantidad !== 'Bien' || condicion === 'Regular') data.cell.styles.fillColor = [255,253,227];
+          if(condicion === 'Malo') data.cell.styles.fillColor = [255,241,241];
         }
       }
     });
@@ -355,19 +370,64 @@ function generateLocalPdf(download=false){
     });
   }
 
-  const filename = `Control_${payload.activity}_${new Date().toISOString().slice(0,10)}.pdf`.replaceAll(' ','_');
+  const filename = pdfFileName(payload);
   if(download) doc.save(filename);
   return doc;
 }
 
+function pdfFileName(payload){
+  return `Control_${payload.activity}_${new Date().toISOString().slice(0,10)}.pdf`.replaceAll(' ','_');
+}
+
+function drawPdfHeader(doc, payload, compact=false){
+  doc.setFillColor(5, 38, 58);
+  doc.rect(0, 0, 210, compact ? 34 : 40, 'F');
+  doc.setFillColor(220, 51, 56);
+  doc.rect(0, compact ? 31 : 37, 210, 3, 'F');
+
+  try{
+    const logo = document.querySelector('.logo');
+    if(logo && logo.complete) doc.addImage(logo, 'PNG', 174, 6, 22, 22);
+  }catch(err){
+    console.warn('No se pudo agregar logo al PDF local', err);
+  }
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(15);
+  doc.text('Control de equipamiento', 14, 13);
+  doc.setFontSize(9);
+  doc.text('Sociedad Bomberos Voluntarios Pergamino', 14, 20);
+
+  if(!compact){
+    doc.setFontSize(8.5);
+    doc.text(`Actividad: ${payload.activity}`, 14, 29);
+    doc.text(`Fecha: ${formatDateForDisplay(payload.fechaControl)}`, 76, 29);
+    doc.text(`Responsable/s: ${payload.responsable || '-'}`, 14, 35, { maxWidth: 138 });
+    doc.text(`Generado: ${new Date(payload.createdAt).toLocaleString('es-AR')}`, 130, 35);
+  }
+  doc.setTextColor(22, 35, 50);
+}
+
 function groupResponsesByLocation(responses){
+  const sorted = [...(responses || [])].sort((a, b) => {
+    const byLocation = naturalLocationOrder(a.ubicacion, b.ubicacion);
+    if(byLocation !== 0) return byLocation;
+    const ao = Number(a.ordenUbicacion);
+    const bo = Number(b.ordenUbicacion);
+    if(Number.isFinite(ao) && Number.isFinite(bo) && ao !== bo) return ao - bo;
+    return String(a.elemento || '').localeCompare(String(b.elemento || ''), 'es', { numeric: true, sensitivity: 'base' });
+  });
   const grouped = new Map();
-  (responses || []).forEach(row => {
-    const location = row.ubicacion || 'Sin ubicación';
+  sorted.forEach(row => {
+    const location = row.ubicacion || 'Sin ubicacion';
     if(!grouped.has(location)) grouped.set(location, []);
     grouped.get(location).push(row);
   });
   return Array.from(grouped, ([location, rows]) => ({ location, rows }));
+}
+
+function naturalLocationOrder(a, b){
+  return String(a || '').localeCompare(String(b || ''), 'es', { numeric: true, sensitivity: 'base' });
 }
 
 
@@ -403,7 +463,7 @@ function renderPhotosPreview(){
     item.className = 'photo-item';
     item.innerHTML = `
       <img src="${photo.dataUrl}" alt="${escapeHtml(photo.name || 'Foto del control')}" />
-      <button type="button" aria-label="Quitar foto">×</button>
+      <button type="button" aria-label="Quitar foto">Ã—</button>
     `;
     item.querySelector('button').addEventListener('click', () => {
       state.photos.splice(index, 1);
@@ -492,7 +552,7 @@ function renderSelectedResponsables(){
   state.selectedResponsables.forEach(name => {
     const tag = document.createElement('span');
     tag.className = 'tag';
-    tag.innerHTML = `${escapeHtml(name)} <button type="button" aria-label="Quitar ${escapeHtml(name)}">×</button>`;
+    tag.innerHTML = `${escapeHtml(name)} <button type="button" aria-label="Quitar ${escapeHtml(name)}">Ã—</button>`;
     tag.querySelector('button').addEventListener('click', () => removeResponsable(name));
     els.selectedResponsables.appendChild(tag);
   });
@@ -522,3 +582,4 @@ function showForm(){ els.homeView.classList.add('hidden'); els.allView.classList
 function escapeHtml(str){ return String(str ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 
 init();
+
