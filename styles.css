@@ -358,6 +358,19 @@ label{font-weight:800;color:var(--navy);display:block} input,textarea,select{wid
   overflow-wrap:anywhere;
 }
 
+.item-note-btn{
+  display:inline;
+  border:0;
+  background:transparent;
+  color:var(--red-dark);
+  font:inherit;
+  font-weight:1000;
+  padding:0 2px;
+  cursor:pointer;
+  text-decoration:underline;
+  text-underline-offset:2px;
+}
+
 .unit-cell{
   width:34px!important;
   min-width:34px!important;

@@ -1,6 +1,6 @@
 ﻿/* Control de equipamiento - SBVP
-   1) PublicÃ¡ el Apps Script como Web App.
-   2) PegÃ¡ la URL del despliegue en WEB_APP_URL.
+   1) Publica el Apps Script como Web App.
+   2) Pega la URL del despliegue en WEB_APP_URL.
 */
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzYiO560Az_Eo_hPzAxeczftZG4h9M3SEPjm-ACtrKzfdtHj_CRiqCCenM3KkIy6vyx/exec";
 
@@ -136,7 +136,7 @@ function activityButton(name, caption){
       ${escapeHtml(name)}
       <small>${caption}</small>
     </span>
-    ${done ? '<span class="done-badge" title="Actividad registrada hoy">âœ“</span>' : ''}
+    ${done ? '<span class="done-badge" title="Actividad registrada hoy">&#10003;</span>' : ''}
   `;
   btn.addEventListener('click', () => openActivity(name));
   return btn;
@@ -170,7 +170,7 @@ function renderFormItems(items){
   els.itemsContainer.innerHTML = '';
   const grouped = new Map();
   items.forEach((item, index) => {
-    const key = item.ubicacion || 'Sin ubicaciÃ³n';
+    const key = item.ubicacion || 'Sin ubicacion';
     if(!grouped.has(key)) grouped.set(key, []);
     grouped.get(key).push({...item, index});
   });
@@ -187,9 +187,13 @@ function renderFormItems(items){
 function itemRow(row){
   const tr = document.createElement('tr');
   tr.dataset.index = row.index;
+  const observacionItem = String(row.observacionItem || '').trim();
+  const observationButton = observacionItem
+    ? `<button type="button" class="item-note-btn" title="Ver observacion previa" aria-label="Ver observacion previa" data-note="${escapeHtml(observacionItem)}">(*)</button>`
+    : '';
   tr.innerHTML = `
     <td data-label="Elemento" class="element-cell">
-      <strong>${escapeHtml(row.elemento)}</strong>
+      <strong>${escapeHtml(row.elemento)} ${observationButton}</strong>
     </td>
     <td data-label="Un" class="unit-cell">
       <span class="unit">${escapeHtml(row.cantidadEsperada)}</span>
@@ -198,21 +202,27 @@ function itemRow(row){
       <select class="cantidad-select" data-index="${row.index}">
         <option selected>Bien</option>
         <option>Hay menos</option>
-        <option>Hay mÃ¡s</option>
+        <option>Hay más</option>
       </select>
     </td>
-    <td data-label="CondiciÃ³n" class="select-cell compact">
+    <td data-label="Condicion" class="select-cell compact">
       <select class="condicion-select" data-index="${row.index}">
         <option selected>Bueno</option>
         <option>Regular</option>
         <option>Malo</option>
       </select>
     </td>
-    <td data-label="ObservaciÃ³n" class="obs-cell">
+    <td data-label="Observacion" class="obs-cell">
       <input type="text" class="obs-input" placeholder="Obs..." />
     </td>`;
   tr.querySelectorAll('select').forEach(select => select.addEventListener('change', () => updateRowState(tr)));
+  const noteButton = tr.querySelector('.item-note-btn');
+  if(noteButton) noteButton.addEventListener('click', () => showItemNote(observacionItem));
   return tr;
+}
+
+function showItemNote(note){
+  alert(note);
 }
 
 function updateRowState(tr){
@@ -231,6 +241,7 @@ function collectPayload(){
       ubicacion: item.ubicacion,
       elemento: item.elemento,
       cantidadEsperada: item.cantidadEsperada,
+      observacionItem: item.observacionItem || '',
       cantidadEstado: row.querySelector('.cantidad-select').value,
       condicionEstado: row.querySelector('.condicion-select').value,
       observacionFila: row.querySelector('.obs-input').value.trim()
@@ -254,8 +265,8 @@ function collectPayload(){
 
 async function submitForm(e){
   e.preventDefault();
-  if(!els.fechaControl.value) return alert('CompletÃ¡ la fecha del control.');
-  if(!state.selectedResponsables.length) return alert('SeleccionÃ¡ al menos un responsable.');
+  if(!els.fechaControl.value) return alert('Completa la fecha del control.');
+  if(!state.selectedResponsables.length) return alert('Selecciona al menos un responsable.');
   const payload = collectPayload();
   const btn = document.getElementById('submitBtn');
   btn.disabled = true; btn.textContent = 'Enviando y generando PDF...';
@@ -304,7 +315,7 @@ function generateLocalPdf(download=false){
     doc.setTextColor(22, 35, 50);
 
     const rows = group.rows.map(r => [
-      r.elemento,
+      r.observacionItem ? `${r.elemento} (*)` : r.elemento,
       r.cantidadEsperada,
       r.cantidadEstado,
       r.condicionEstado,
@@ -409,25 +420,13 @@ function drawPdfHeader(doc, payload, compact=false){
 }
 
 function groupResponsesByLocation(responses){
-  const sorted = [...(responses || [])].sort((a, b) => {
-    const byLocation = naturalLocationOrder(a.ubicacion, b.ubicacion);
-    if(byLocation !== 0) return byLocation;
-    const ao = Number(a.ordenUbicacion);
-    const bo = Number(b.ordenUbicacion);
-    if(Number.isFinite(ao) && Number.isFinite(bo) && ao !== bo) return ao - bo;
-    return String(a.elemento || '').localeCompare(String(b.elemento || ''), 'es', { numeric: true, sensitivity: 'base' });
-  });
   const grouped = new Map();
-  sorted.forEach(row => {
+  (responses || []).forEach(row => {
     const location = row.ubicacion || 'Sin ubicacion';
     if(!grouped.has(location)) grouped.set(location, []);
     grouped.get(location).push(row);
   });
   return Array.from(grouped, ([location, rows]) => ({ location, rows }));
-}
-
-function naturalLocationOrder(a, b){
-  return String(a || '').localeCompare(String(b || ''), 'es', { numeric: true, sensitivity: 'base' });
 }
 
 
@@ -463,7 +462,7 @@ function renderPhotosPreview(){
     item.className = 'photo-item';
     item.innerHTML = `
       <img src="${photo.dataUrl}" alt="${escapeHtml(photo.name || 'Foto del control')}" />
-      <button type="button" aria-label="Quitar foto">Ã—</button>
+      <button type="button" aria-label="Quitar foto">&times;</button>
     `;
     item.querySelector('button').addEventListener('click', () => {
       state.photos.splice(index, 1);
@@ -552,7 +551,7 @@ function renderSelectedResponsables(){
   state.selectedResponsables.forEach(name => {
     const tag = document.createElement('span');
     tag.className = 'tag';
-    tag.innerHTML = `${escapeHtml(name)} <button type="button" aria-label="Quitar ${escapeHtml(name)}">Ã—</button>`;
+    tag.innerHTML = `${escapeHtml(name)} <button type="button" aria-label="Quitar ${escapeHtml(name)}">&times;</button>`;
     tag.querySelector('button').addEventListener('click', () => removeResponsable(name));
     els.selectedResponsables.appendChild(tag);
   });
